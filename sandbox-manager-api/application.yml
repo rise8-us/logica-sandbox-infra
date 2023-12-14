@@ -1,0 +1,196 @@
+server:
+  port: 12000
+  tomcat:
+    remote_ip_header: x-forwarded-for
+    protocol_header: x-forwarded-proto
+
+spring:
+  application:
+    name: HSPC Sandbox Manager
+  profiles:
+    active:
+  datasource:
+    base_url: jdbc:mysql://${DB_HOST:sandbox-mysql}:${DB_PORT:3306}
+    my_schema: ${DB_NAME:sandman}
+    url: ${spring.datasource.base_url}/${spring.datasource.my_schema}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:password}
+    driverClassName: com.mysql.jdbc.Driver
+    validation-query: SELECT 1
+    test-on-borrow: true
+    tomcat:
+      initialSize: 1
+      maxActive: 5
+    platform: mysql
+
+  jpa:
+    show-sql: false
+    hibernate:
+      # Do not commit with a different value (update, create, etc)
+      # Instead, use flywaydb scripts at /src/main/resources/db/mysql/migrate
+      ddl-auto: validate
+
+      dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+      naming_strategy: org.hibernate.cfg.ImprovedNamingStrategy
+  mail:
+    sender:
+      address: noreply@logicahealth.org
+    host: email-smtp.us-east-1.amazonaws.com
+    port: 587
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: false
+          quitwait: false
+    username: AKIAZSHAHGWDPACREPTA
+    password: ThisIsNotTheRightPW
+  thymeleaf:
+    cache: false
+    check-template: true
+    check-template-location: true
+    content-type: text/html
+    enabled: true
+    encoding: UTF-8
+    prefix: classpath:/templates/
+    suffix: .html
+  flyway:
+    table: schema_version
+  servlet:
+    multipart:
+      max-file-size: 512MB
+      max-request-size: 512MB
+
+flyway:
+  locations: classpath:db/migration/{vendor}
+  out-of-order: true
+
+security:
+  oauth2:
+    resource:
+      userInfoUri: ${hspc.platform.authorization.url}/userinfo
+      token-info-uri: ${hspc.platform.authorization.url}/token
+
+hspc:
+  platform:
+    # When a user is added to a PUBLIC sandbox, these are their default Sandbox Roles
+    defaultPublicSandboxRoles: USER
+    # When a user is added to a PRIVATE sandbox, these are their default Sandbox Roles
+    defaultPrivateSandboxRoles: USER,MANAGE_DATA
+    # When a user creates a brand new sandbox, these are the default Sandbox Roles they are given in the new sandbox
+    defaultSandboxCreatorRoles: ADMIN,MANAGE_USERS,MANAGE_DATA
+    # When a user logs in to Sandbox Manager for the first time, these are the System Roles they are given
+    #    defaultSystemRoles: USER
+    defaultSystemRoles: USER,CREATE_SANDBOX
+    # When a user creates a brand new sandbox, this is the default visibility of the new sandbox
+    #    defaultSandboxVisibility: PUBLIC
+    defaultSandboxVisibility: PRIVATE
+    templateSandboxIds: MasterDstu2Empty, MasterDstu2Smart, MasterStu3Empty, MasterStu3Smart, MasterR4Empty, MasterR4Smart, MasterStu3Synthea, MasterR5Empty
+    dontDeleteInSync: dstu2, stu3, hspc, hspc3, hspc4, hspc5, hspc6, hspc7
+    sandboxesAllUsersCanAccess: hspc5, hspc6, hspc8, hspc9, DaVinciDemoPayer, DaVinciCOLPayer, DaVinciCOLProvider, DaVinciMRPPayer, DaVinciMRPProvider, DaVinciPDexPayer, DaVinciPDexProvider, DaVinciMRPProviderR4, DaVinciMRPPayerR4, DaVinciCDexPayer, DaVinciCDexProvider
+    # How many sandbox creation tasks can run in parallel
+    simultaneousSandboxCreationTasksLimit: 1
+    authorization:
+      url: http://${AUTH_HOST:localhost}:${AUTH_PORT:8060}
+      tokenEndpoint: ${hspc.platform.authorization.url}/token
+      authorizeEndpoint: ${hspc.platform.authorization.url}/authorize
+      adminAccess:
+        clientId: sandman_admin
+        clientSecret: secret
+    api:
+      oauthUserInfoEndpointURL: ${hspc.platform.authorization.url}/userinfo
+      oauthClientEndpointURL: ${hspc.platform.authorization.url}/api/clients
+      fhir:
+        profileResources: StructureDefinition, CodeSystem, ValueSet, SearchParameter
+    messaging:
+      sendEmail: false
+
+    syntheticData:
+    #      fhirServerUrl: https://syntheticmass.mitre.org/fhir
+    #       fhirServerUrl: ${hspc.platform.api.version3.baseUrl}/synthea2/open
+    jwt:
+      key: devKeyDoNotUseInProductionShouldBeOverwrittenInProdConfiguration
+      signatureAlgorithm: HS256
+    validCdsHooks: patient-view, medication-prescribe, order-review, order-select, order-sign, appointment-book, encounter-start, encounter-discharge
+    deprecatedCdsHooks: medication-prescribe, order-review
+
+multipart:
+  enabled: true
+
+jasypt:
+  encryptor:
+    algorithm: PBEWithMD5AndTripleDES
+
+endpoints:
+  health:
+    sensitive: false
+
+management:
+  security:
+    enabled: false
+
+cloud:
+  aws:
+    cloudwatch:
+      namespace: sandbox-manager-api
+    region:
+      static: us-west-2
+    stack:
+      auto: false
+
+expiration-message: FHIR R4 DFC available on trial basis. This sandbox will be unavailable after Mar 31, 2019.
+expiration-date: 2019-03-31
+
+default-public-apps: cds-hooks-sandbox, hspc-bilirubin-risk-chart, hspc-my-web-app
+
+tier-rules:
+  tierRuleList:
+    FREE:
+      sandboxes: 1
+      apps: 2
+      users: 2
+      transactions: 50000
+      storage: 1000
+    DEVELOPER:
+      sandboxes: 3
+      apps: 5
+      users: 3
+      transactions: 100000
+      storage: 5000
+    TEAM:
+      sandboxes: 10
+      apps: 10
+      users: 10
+      transactions: 500000
+      storage: 20000
+    ENTERPRISE:
+      sandboxes: 40
+      apps:
+      users:
+      transactions:
+      storage:
+  threshold: 0.9
+
+api_endpoint_index:
+  prev:
+    dstu2: 5
+    stu3: 6
+    r4: 7
+    r5:
+    apiBaseURL_dstu2: http://${API_DSTU2_HOST:localhost}:${API_DSTU2_PORT:8075}
+    apiBaseURL_stu3: http://${API_STU3_HOST:localhost}:${API_STU3_PORT:8076}
+    apiBaseURL_r4: http://${API_R4_HOST:localhost}:${API_R4_PORT:8077}
+    apiBaseURL_r5:
+  current:
+    dstu2: 8
+    stu3: 9
+    r4: 10
+    r5: 11
+    apiBaseURL_dstu2: http://${API_DSTU2_HOST:localhost}:${API_DSTU2_PORT:8078}
+    apiBaseURL_stu3: http://${API_STU3_HOST:localhost}:${API_STU3_PORT:8079}
+    apiBaseURL_r4: http://${API_R4_HOST:localhost}:${API_R4_PORT:8070}
+    apiBaseURL_r5: http://${API_R5_HOST:localhost}:${API_R5_PORT:8071}
