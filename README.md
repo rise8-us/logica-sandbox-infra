@@ -6,7 +6,6 @@ Custom docker containers to be used with Logica Sandbox Community Edition.
 *Only supports DSTU2 & R4 FHIR servers.*
 
 ## Support
-[slack#team-lasershark](https://lighthouseva.slack.com/archives/C02KV82K48M)
 
 - [Dumping Databases](docs/dumping-databases.md)
 
